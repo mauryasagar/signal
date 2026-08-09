@@ -10,21 +10,7 @@ Built for the **Zerops Challenge · WeMakeDevs 2026**
 
 </div>
 
----
 
-## Screenshots
-
-| Dashboard | Topic Report |
-| :---: | :---: |
-| ![Dashboard](./assets/landing-page.png) | ![Topics](./assets/topic-report.png) |
-
-| Zerops Environment Variables | Zerops Architecture Deploy |
-| :---: | :---: |
-| ![Env Vars](./assets/env-vars.png) | ![Deploy](./assets/zerops-dashboard.png) |
-
-| Valkey Health Check API |  |
-| :---: | :---: |
-| ![Health Check](./assets/health-check.png) |  |
 
 ---
 
@@ -192,6 +178,22 @@ signal/
     ├── style.css           # Dark/light theme via CSS vars + data-theme attribute
     └── main.js             # Theme toggle (persisted in localStorage) + loading overlay
 ```
+
+---
+
+## Screenshots
+
+| Dashboard | Topic Report |
+| :---: | :---: |
+| ![Dashboard](./assets/landing-page.png) | ![Topics](./assets/topic-report.png) |
+
+| Zerops Environment Variables | Zerops Architecture Deploy |
+| :---: | :---: |
+| ![Env Vars](./assets/env-vars.png) | ![Deploy](./assets/zerops-dashboard.png) |
+
+| Valkey Health Check API |  |
+| :---: | :---: |
+| ![Health Check](./assets/health-check.png) |  |
 
 ---
 
