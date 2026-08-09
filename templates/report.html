@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Signal — Topics for {{ niche }}{% endblock %}
+
+{% block content %}
+<div id="dynamic-content-area">
+<header class="report-header">
+  <div class="report-header-top">
+    <div>
+      <p class="eyebrow">Scan complete</p>
+      <h1>Video topics for "{{ niche }}"</h1>
+      <p class="sub">{{ generated_count }} topic ideas ranked by current demand signal</p>
+    </div>
+    <div class="header-actions">
+      <a href="{{ url_for('landing') }}" class="btn-secondary">← New scan</a>
+    </div>
+  </div>
+</header>
+
+<div class="stat-strip">
+  <div class="stat-box">
+    <div class="stat-value" data-count="{{ generated_count }}">{{ generated_count }}</div>
+    <div class="stat-label">Topics generated</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" data-count="{{ top_topic.demand_score if top_topic else 0 }}">{{ top_topic.demand_score if top_topic else '—' }}</div>
+    <div class="stat-label">Top demand score</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" data-count="{{ topics | sum(attribute='video_count') }}">{{ topics | sum(attribute='video_count') }}</div>
+    <div class="stat-label">Related videos scanned</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value cache-badge {% if cache_hit %}hit{% else %}live{% endif %}">{% if cache_hit %}HIT{% else %}LIVE{% endif %}</div>
+    <div class="stat-label">Cache state</div>
+  </div>
+</div>
+
+{% if top_topic %}
+<div class="top-pick">
+  <div class="top-pick-inner">
+    <div class="top-pick-header">
+      <p class="top-pick-label">Strongest signal pick</p>
+      <button type="button" class="btn-copy-sm copy-topic-btn" data-text="{{ top_topic.title }}" title="Copy title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copy Title</span>
+      </button>
+    </div>
+    <h2>{{ top_topic.title }}</h2>
+    <p>{{ top_topic.angle }}</p>
+  </div>
+</div>
+{% endif %}
+
+<section class="topics-section">
+  <div class="topics-toolbar">
+    <h3>All topic ideas, ranked</h3>
+    <div class="toolbar-controls">
+      <div class="filter-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="topic-filter-input" placeholder="Filter topics in real-time..." autocomplete="off">
+      </div>
+      <button type="button" class="btn-secondary-sm" id="copy-all-btn">Copy All Topics</button>
+    </div>
+  </div>
+
+  <div id="topics-list">
+  {% for topic in topics %}
+  <div class="topic-card" data-title="{{ topic.title | lower }}" data-query="{{ topic.query | lower }}" data-angle="{{ topic.angle | lower }}">
+    <div class="topic-rank">{{ "%02d"|format(loop.index) }}</div>
+    <div class="topic-body">
+      <div class="topic-title-row">
+        <h4>{{ topic.title }}</h4>
+        <button type="button" class="btn-icon-copy copy-topic-btn" data-text="{{ topic.title }}" aria-label="Copy topic title" title="Copy title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <p class="angle">{{ topic.angle }}</p>
+      <div class="topic-meta">
+        <span>from "{{ topic.query }}"</span>
+        {% if topic.trend_interest %}<span>trend {{ topic.trend_interest }}/100</span>{% endif %}
+        {% if topic.video_count %}<span>{{ topic.video_count }} recent videos</span>{% endif %}
+        {% if topic.avg_views %}<span>avg {{ "{:,}".format(topic.avg_views) }} views</span>{% endif %}
+        {% if topic.sample_titles %}
+        <button type="button" class="btn-samples-toggle" onclick="toggleSamples(this)">
+          <span>Sample videos ({{ topic.sample_titles | length }})</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        {% endif %}
+      </div>
+
+      {% if topic.sample_titles %}
+      <div class="sample-titles-panel" style="display: none;">
+        <p class="panel-label">Recent YouTube titles scanned for "{{ topic.query }}":</p>
+        <ul>
+          {% for stitle in topic.sample_titles %}
+          <li>{{ stitle }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    <div class="topic-score">
+      <div class="score-num" data-count="{{ topic.demand_score }}">{{ topic.demand_score }}</div>
+      <div class="score-label">demand</div>
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+
+  <div id="no-topics-found" style="display: none;" class="no-results-box">
+    <p>No topic ideas match your filter query.</p>
+  </div>
+</section>
+</div>
+
+<!-- Toast notification container -->
+<div id="toast-container" class="toast-container"></div>
+{% endblock %}
+
+{% block footer_link %}
+<a href="{{ url_for('landing') }}">← Scan another niche</a>
+{% endblock %}
+
+{% block footer_sep %}
+<span class="footer-sep">&middot;</span>
+{% endblock %}

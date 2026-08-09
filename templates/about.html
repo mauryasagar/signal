@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Signal — About{% endblock %}
+
+{% block content %}
+<section class="about-hero">
+  <p class="eyebrow">About</p>
+  <h1>Search interest, not guesswork.</h1>
+  <p class="lede">Most content advice is generic — "post consistently," "use trending sounds."</p>
+  <p class="lede">Signal looks at real, current search interest in your niche and cross-references it with what's actually getting views on YouTube right now.</p>
+  <p class="lede">It turns that into concrete video topics you can film today.</p>
+</section>
+
+<section class="about-grid">
+  <div class="about-card">
+    <span class="about-step">01</span>
+    <h3>Trend signals</h3>
+    <p>Google Trends surfaces related and rising search queries for your niche — a relative interest score, not raw volume, since that data isn't free anywhere.</p>
+  </div>
+  <div class="about-card">
+    <span class="about-step">02</span>
+    <h3>YouTube demand check</h3>
+    <p>The YouTube Data API checks how many recent videos exist for each related query and their average views — a real-world signal of what's actively being made and watched.</p>
+  </div>
+  <div class="about-card">
+    <span class="about-step">03</span>
+    <h3>Topic generation</h3>
+    <p>Groq, running Llama 3.1 8B Instant, turns each raw keyword and its demand signal into an actual video title with a one-line angle on why it could work right now.</p>
+  </div>
+</section>
+
+<section class="about-note">
+  <p>
+    <strong>On the demand score:</strong> it's a directional estimate combining relative
+    search interest and current YouTube activity — not exact search volume, since that
+    data isn't publicly available for free. Treat it as a compass, not a guarantee.
+  </p>
+</section>
+
+<section class="about-cta">
+  <a href="{{ url_for('landing') }}" class="btn-primary">Try a scan →</a>
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+Flask==3.0.3
+python-dotenv==1.0.1
+google-api-python-client==2.140.0
+groq==0.15.0
+pytrends==4.9.2
+pandas==2.2.3
+gunicorn==22.0.0
+redis==5.2.0
