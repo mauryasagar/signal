@@ -1,10 +1,3 @@
-# zerops.yaml — Signal deployment on Zerops
-# Docs: https://docs.zerops.io/zerops-yml/specification
-#
-# Project uses two Zerops services:
-#   signal  — Python/Gunicorn Flask app (defined here)
-#   valkey  — Valkey cache (add via Zerops dashboard, set env vars below)
-
 zerops:
   - setup: signal
     build:
@@ -13,23 +6,24 @@ zerops:
         - pip install --upgrade pip
         - pip install -r requirements.txt
       deployFiles:
-        - .
-      cache:
-        - ~/.cache/pip
+        - app.py
+        - report.py
+        - fetch_trends.py
+        - generate_topics.py
+        - cache.py
+        - requirements.txt
+        - templates
+        - static
     run:
       base: python@3.12
+      prepareCommands:
+        - pip install --upgrade pip
+        - pip install -r requirements.txt
       ports:
         - port: 8000
           httpSupport: true
-      # Set these in the Zerops dashboard → your Signal service → Environment variables
-      # Never commit real keys here.
-      #
-      # REQUIRED:
-      #   YOUTUBE_API_KEY   — YouTube Data API v3 key
-      #   GROQ_API_KEY      — Groq API key (free at console.groq.com)
-      #
-      # OPTIONAL (add Valkey service to your project first):
-      #   VALKEY_HOST       — hostname of your Zerops Valkey service (e.g. "valkey")
-      #   VALKEY_PORT       — default 6379
-      #   VALKEY_PASSWORD   — leave blank if no auth configured
+      healthCheck:
+        httpGet:
+          port: 8000
+          path: /health
       start: gunicorn app:app --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile -
