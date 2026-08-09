@@ -12,6 +12,22 @@ Built for the **Zerops Challenge · WeMakeDevs 2026**
 
 ---
 
+## Screenshots
+
+| Dashboard | Topic Report |
+| :---: | :---: |
+| ![Dashboard](./assets/landing-page.png) | ![Topics](./assets/topic-report.png) |
+
+| Zerops Environment Variables | Zerops Architecture Deploy |
+| :---: | :---: |
+| ![Env Vars](./assets/env-vars.png) | ![Deploy](./assets/zerops-dashboard.png) |
+
+| Valkey Health Check API |  |
+| :---: | :---: |
+| ![Health Check](./assets/health-check.png) |  |
+
+---
+
 ## The problem it solves
 
 Most YouTube content advice is generic — "post consistently," "use trending sounds," "add numbers to your title." None of it is specific to your niche or backed by real data.
