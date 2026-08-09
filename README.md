@@ -191,7 +191,7 @@ signal/
 | :---: | :---: |
 | ![Env Vars](./assets/env-vars.png) | ![Deploy](./assets/zerops-dashboard.png) |
 
-| Valkey Health Check API |  |
+| Valkey Health Check |  |
 | :---: | :---: |
 | ![Health Check](./assets/health-check.png) |  |
 
