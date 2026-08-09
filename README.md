@@ -6,7 +6,7 @@
 
 Built for the **Zerops Challenge · WeMakeDevs 2026**
 
-[🚀 Live Demo](https://your-app.zerops.app) &nbsp;•&nbsp; [📝 Blog](https://your-blog-url)
+[🚀 Live Demo](https://signal-2dc6-8000.prg1.zerops.app) &nbsp;•&nbsp; [📝 Blog](https://dev.to/sagarmaurya/how-i-built-a-youtube-trend-engine-on-zerops-hka)
 
 </div>
 
