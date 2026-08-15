@@ -8,7 +8,10 @@ Don't Have To" with a one-line angle explaining why it'd work.
 """
 
 import json
+import logging
 from groq import Groq
+
+log = logging.getLogger(__name__)
 
 
 class TopicGenerationError(Exception):
@@ -104,15 +107,22 @@ def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b")
 
         response = client.chat.completions.create(
             model=model_name,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a JSON API. You respond ONLY with valid JSON objects. No markdown, no code fences, no explanation."},
+                {"role": "user", "content": prompt},
+            ],
             temperature=0.6,
         )
 
-        raw_text = _extract_json(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content
+        log.info("LLM raw response (first 500 chars): %s", raw_content[:500] if raw_content else "<empty>")
+        raw_text = _extract_json(raw_content)
+        log.info("Extracted JSON (first 500 chars): %s", raw_text[:500] if raw_text else "<empty>")
         parsed = json.loads(raw_text)
         ideas = parsed.get("topics", [])
 
     except json.JSONDecodeError as e:
+        log.error("JSON parse failed. Extracted text: %s", raw_text[:1000] if raw_text else "<empty>")
         raise TopicGenerationError(
             "AI returned a malformed response. Please try again."
         ) from e
