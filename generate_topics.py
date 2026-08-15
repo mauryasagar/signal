@@ -28,6 +28,14 @@ For each signal, generate ONE compelling YouTube video title/topic idea that a c
 in this niche could actually make. The title should be specific, clickable, and true to
 what the video would contain (no clickbait that overpromises).
 
+Make sure to:
+1. Use VARIED title formats — not the same structure for every topic (no repeating "The Ultimate Guide to..." for multiple titles)
+2. Mix formats like: how-to titles, question titles, list titles ("5 Reasons..."), story/hook titles ("Why I Switched to..."), controversy titles ("The Problem With...")
+3. Make each title sound distinct and natural, like a real YouTube creator wrote it
+4. Keep titles punchy and under 70 characters where possible
+
+Each title must use a DIFFERENT format from the others. Avoid starting multiple titles with the same word or phrase.
+
 Also write a one-sentence "angle" explaining why this topic could work right now,
 referencing the demand signal briefly.
 
