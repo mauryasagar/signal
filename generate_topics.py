@@ -39,13 +39,15 @@ Each title must use a DIFFERENT format from the others. Avoid starting multiple 
 Also write a one-sentence "angle" explaining why this topic could work right now,
 referencing the demand signal briefly.
 
-Respond ONLY with a valid JSON array, no markdown formatting, no code fences, no preamble.
+Respond ONLY with a valid JSON object. Do not include markdown formatting or extra text.
 Format:
-[
-  {{"source_query": "...", "title": "...", "angle": "..."}}
-]
+{{
+  "topics": [
+    {{"source_query": "...", "title": "...", "angle": "..."}}
+  ]
+}}
 
-Generate exactly {count} items, one per signal, in the same order as given."""
+Generate exactly {count} items in the "topics" array, one per signal, in the same order as given."""
 
 
 def _format_signals_for_prompt(signals):
@@ -71,7 +73,7 @@ def _extract_json(text):
     text = re.sub(r"```\s*$", "", text)
     text = text.strip()
 
-    match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
+    match = re.search(r"\{\s*\"topics\".*\}", text, re.DOTALL)
     if match:
         return match.group(0)
 
@@ -109,10 +111,12 @@ def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b")
         response = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
+            temperature=0.7,
+            response_format={"type": "json_object"}
         )
         raw_text = _extract_json(response.choices[0].message.content)
-        ideas = json.loads(raw_text)
+        parsed = json.loads(raw_text)
+        ideas = parsed.get("topics", [])
 
     except json.JSONDecodeError:
         # Fallback if LLM formatting deviates: construct clean topic ideas directly from signals
