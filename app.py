@@ -60,6 +60,12 @@ def generate():
         if is_ajax:
             return jsonify({"success": False, "error": str(e)}), 400
         return render_template("landing.html", error=str(e), niche=niche)
+    except Exception as e:
+        logging.exception("Unexpected error in /generate")
+        msg = "Something went wrong. Please try again."
+        if is_ajax:
+            return jsonify({"success": False, "error": msg}), 500
+        return render_template("landing.html", error=msg, niche=niche)
 
 
 @app.route("/health", methods=["GET"])
