@@ -64,20 +64,18 @@ def _format_signals_for_prompt(signals):
 
 
 def _extract_json(text):
-    """Robust JSON array extraction from LLM text output."""
+    """Robust JSON extraction from LLM text output."""
     if not text:
         return ""
-    text = text.strip()
-    text = re.sub(r"^```json\s*", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"^```\s*", "", text)
-    text = re.sub(r"```\s*$", "", text)
-    text = text.strip()
-
-    match = re.search(r"\{\s*\"topics\".*\}", text, re.DOTALL)
-    if match:
-        return match.group(0)
-
-    return text
+    
+    # Find the first '{' and the last '}'
+    start = text.find('{')
+    end = text.rfind('}')
+    
+    if start != -1 and end != -1 and end > start:
+        return text[start:end+1]
+        
+    return text.strip()
 
 
 def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b"):
