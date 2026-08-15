@@ -109,22 +109,16 @@ def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b")
         response = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            response_format={"type": "json_object"}
+            temperature=0.6,
+            response_format={"type": "json_object"},
+            thinking={"type": "disabled"}
         )
         raw_text = _extract_json(response.choices[0].message.content)
         parsed = json.loads(raw_text)
         ideas = parsed.get("topics", [])
 
     except json.JSONDecodeError:
-        # Fallback if LLM formatting deviates: construct clean topic ideas directly from signals
-        ideas = []
-        for s in signals:
-            q = s["query"].strip()
-            ideas.append({
-                "title": f"The Ultimate Guide to {q.title()}",
-                "angle": f"High demand signal around '{q}' with {s['video_count']} recent videos."
-            })
+        raise TopicGenerationError("AI returned malformed response. Please try again.")
     except Exception as e:
         error_str = str(e).lower()
         if "api key" in error_str or "authentication" in error_str or "401" in error_str:
