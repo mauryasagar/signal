@@ -106,7 +106,6 @@ def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b")
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6,
-            response_format={"type": "json_object"},
         )
 
         raw_text = _extract_json(response.choices[0].message.content)
