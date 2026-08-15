@@ -226,11 +226,18 @@ function initAsyncFormSubmit() {
       },
       body: JSON.stringify({ niche: niche })
     })
-      .then(res => {
-        if (!res.ok) {
-          return res.json().then(data => { throw new Error(data.error || "Generation failed."); });
+      .then(async res => {
+        let data;
+        try {
+          data = await res.json();
+        } catch (e) {
+          throw new Error("Server returned an invalid HTML response instead of JSON. Please try again.");
         }
-        return res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Generation failed.");
+        }
+        return data;
       })
       .then(data => {
         hideLoadingOverlay();
