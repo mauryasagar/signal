@@ -1,6 +1,6 @@
 """
 Turns raw trend/keyword signals into concrete, ready-to-film video topic
-suggestions using Groq (free tier, Llama 3.1 8B Instant).
+suggestions using Groq (free tier, Qwen 3.6 27B).
 
 This is the step that makes the tool useful rather than just a keyword
 dump - "cold brew ratio" becomes "I Tested 5 Cold Brew Ratios So You
@@ -70,9 +70,9 @@ def _extract_json(text):
     return text
 
 
-def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.1-8b-instant"):
+def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b"):
     """
-    Calls Groq (Llama 3.1 8B Instant) to turn raw signals into topic ideas.
+    Calls Groq (Qwen 3.6 27B) to turn raw signals into topic ideas.
 
     Returns a list of dicts merging the original signal data with the
     generated title/angle:

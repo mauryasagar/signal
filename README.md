@@ -47,7 +47,7 @@ flowchart TB
 
     App -->|"2 · MISS only"| Trends["Google Trends<br/><i>pytrends</i>"]
     App -->|"2 · MISS only"| YT["YouTube Data API v3"]
-    App -->|"4 · always"| Groq["Groq API<br/><i>Llama 3.3 70B</i>"]
+    App -->|"4 · always"| Groq["Groq API<br/><i>Qwen 3.6 27B</i>"]
 
     Trends -.->|"related + rising<br/>queries"| App
     YT -.->|"video count +<br/>avg views"| App
@@ -121,8 +121,8 @@ Pulls **rising** and **top** related search queries for the niche over the last 
 ### Step 3 — YouTube Data API v3
 For each query from Trends, Signal calls `search.list` to find the top 5 most-viewed recent videos (published after August 2025). Then calls `videos.list` to get their view counts and compute an average. This gives a real-world signal of what's actively being made and watched. Each call costs 100 API units against the 10K/day free quota.
 
-### Step 4 — Groq LLM (Llama 3.3 70B)
-Sends all signals to Llama 3.3 70B via the Groq API with a structured prompt. The model receives each keyword + its demand indicators and returns a JSON array — one entry per signal — with a **video title** and a one-line **angle** explaining why it could work. Groq's free tier has no credit card requirement and handled this reliably in testing.
+### Step 4 — Groq LLM (Qwen 3.6 27B)
+Sends all signals to Qwen 3.6 27B via the Groq API with a structured prompt. The model receives each keyword + its demand indicators and returns a JSON array — one entry per signal — with a **video title** and a one-line **angle** explaining why it could work. Groq's free tier has no credit card requirement and handled this reliably in testing.
 
 ### Step 5 — Demand score + ranking
 Each topic gets a 0–100 demand score:
@@ -148,7 +148,7 @@ Topics are sorted by demand score descending. The top topic gets a highlighted b
 | Web server | Flask + Gunicorn | Lightweight, easy to template, production-safe with Gunicorn |
 | Trend data | Google Trends via `pytrends` | No API key needed; free unofficial wrapper |
 | YouTube demand | YouTube Data API v3 | Official API, free 10K quota/day, real view data |
-| LLM | Groq — Llama 3.3 70B | Free tier, no card required, fast inference |
+| LLM | Groq — Qwen 3.6 27B | Free tier, no card required, fast inference |
 | Cache | Zerops Valkey (Redis-compatible) | Reduces API calls on repeat queries; meaningful Zerops integration |
 | Deployment | **Zerops** | Production infra, live URL, stays up through judging |
 | Frontend | Jinja2 + vanilla CSS/JS | No build step, no framework, nothing to break |
@@ -302,7 +302,7 @@ Hit `/health` on your live URL:
 ## AI tools used
 
 - **Claude (Anthropic)** — architecture decisions, code generation, README
-- **Groq / Llama 3.3 70B** — runtime LLM for topic generation (part of the product itself)
+- **Groq / Qwen 3.6 27B** — runtime LLM for topic generation (part of the product itself)
 
 All code reviewed and understood by the author. Architecture and implementation decisions are original.
 
