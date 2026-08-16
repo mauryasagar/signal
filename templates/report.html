@@ -148,17 +148,8 @@
 
 <!-- Toast notification container -->
 <div id="toast-container" class="toast-container"></div>
-{% endblock %}
 
-{% block footer_link %}
-<a href="{{ url_for('landing') }}">← Scan another niche</a>
-{% endblock %}
-
-{% block footer_sep %}
-<span class="footer-sep">&middot;</span>
-{% endblock %}
-
-<!-- Add this script block at the very bottom of the file -->
+<!-- Script moved INSIDE the block to prevent Jinja2 errors -->
 <script>
   function generateScript(button) {
     const title = button.dataset.title;
@@ -221,3 +212,12 @@
       });
   }
 </script>
+{% endblock %}
+
+{% block footer_link %}
+<a href="{{ url_for('landing') }}">← Scan another niche</a>
+{% endblock %}
+
+{% block footer_sep %}
+<span class="footer-sep">&middot;</span>
+{% endblock %}
