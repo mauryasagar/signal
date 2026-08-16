@@ -1,6 +1,6 @@
 """
 Turns raw trend/keyword signals into concrete, ready-to-film video topic
-suggestions using Groq.
+suggestions and full scripts using Groq.
 """
 
 import os
@@ -52,6 +52,20 @@ Format:
 
 Generate exactly {count} items in the "topics" array, one per signal, in the same order as given."""
 
+SCRIPT_PROMPT_TEMPLATE = """You are an expert YouTube scriptwriter.
+Video Title: {title}
+Video Angle: {angle}
+
+Write a complete, ready-to-film YouTube video script. It must be engaging, fast-paced, and retain viewer attention.
+Respond ONLY with a valid JSON object matching this exact format:
+{{
+  "hook": "A compelling 10-15 second opening hook to stop the scroll",
+  "intro": "The introduction section (2-3 sentences explaining what the viewer will learn)",
+  "body": ["Step/Point 1 of the main content", "Step/Point 2 of the main content", "Step/Point 3 of the main content"],
+  "outro": "The conclusion including a specific call to action (e.g., subscribe, comment, click a link)",
+  "b_roll": ["Visual idea 1 to show on screen", "Visual idea 2 to show on screen", "Visual idea 3 to show on screen"]
+}}"""
+
 
 def _format_signals_for_prompt(signals):
     lines = []
@@ -67,15 +81,12 @@ def _format_signals_for_prompt(signals):
 
 
 def _extract_json(text):
-    """Strip <think>...</think> tags and markdown code fences, then extract JSON object."""
+    """Strip tags and markdown code fences, then extract JSON object."""
     if not text:
         return ""
-    # Remove <think>...</think> blocks some models prepend (just in case)
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Strip markdown code fences if present (```json ... ``` or ``` ... ```)
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE).strip()
-    # Find outermost { ... }
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
@@ -84,12 +95,7 @@ def _extract_json(text):
 
 
 def generate_topic_ideas(niche, signals, api_key, model_name=None):
-    """
-    Calls Groq to turn raw signals into topic ideas.
-
-    Returns a list of dicts merging the original signal data with the
-    generated title/angle.
-    """
+    """Calls Groq to turn raw signals into topic ideas."""
     if not api_key:
         raise TopicGenerationError(
             "No Groq API key found. Add GROQ_API_KEY to your .env file. "
@@ -99,21 +105,18 @@ def generate_topic_ideas(niche, signals, api_key, model_name=None):
     if not signals:
         raise TopicGenerationError("No trend signals available to generate topics from.")
 
-    # Allow override via env var, fall back to safe default
     if model_name is None:
         model_name = os.getenv("GROQ_MODEL", DEFAULT_MODEL)
 
     raw_text = ""
     try:
         client = Groq(api_key=api_key)
-
         prompt = PROMPT_TEMPLATE.format(
             niche=niche,
             signals_text=_format_signals_for_prompt(signals),
             count=len(signals),
         )
 
-        # Force native JSON mode in Groq to prevent malformed responses
         response = client.chat.completions.create(
             model=model_name,
             messages=[
@@ -121,14 +124,12 @@ def generate_topic_ideas(niche, signals, api_key, model_name=None):
                 {"role": "user", "content": prompt},
             ],
             temperature=0.6,
-            response_format={"type": "json_object"},  # <--- THIS ENFORCES STRICT JSON
+            response_format={"type": "json_object"},
         )
 
         raw_content = response.choices[0].message.content
         log.info("LLM raw response (first 500 chars): %s", raw_content[:500] if raw_content else "<empty>")
         raw_text = _extract_json(raw_content)
-        log.info("Extracted JSON (first 500 chars): %s", raw_text[:500] if raw_text else "<empty>")
-        
         parsed = json.loads(raw_text)
         ideas = parsed.get("topics", [])
 
@@ -137,31 +138,19 @@ def generate_topic_ideas(niche, signals, api_key, model_name=None):
 
     except json.JSONDecodeError as e:
         log.error("JSON parse failed. Extracted text: %s", raw_text[:1000] if raw_text else "<empty>")
-        raise TopicGenerationError(
-            "AI returned a malformed response. Please try again."
-        ) from e
-
+        raise TopicGenerationError("AI returned a malformed response. Please try again.") from e
     except TopicGenerationError:
         raise
-
     except Exception as e:
         error_str = str(e).lower()
         if "api key" in error_str or "authentication" in error_str or "401" in error_str:
-            raise TopicGenerationError(
-                "Groq API key was rejected. Double-check GROQ_API_KEY in your .env file."
-            )
+            raise TopicGenerationError("Groq API key was rejected. Double-check GROQ_API_KEY in your .env file.")
         if "quota" in error_str or "429" in error_str or "rate" in error_str:
-            raise TopicGenerationError(
-                "Groq free tier rate limit hit. Wait a minute and try again."
-            )
+            raise TopicGenerationError("Groq free tier rate limit hit. Wait a minute and try again.")
         if "model" in error_str and ("not found" in error_str or "does not exist" in error_str or "404" in error_str):
-            raise TopicGenerationError(
-                f"The configured Groq model '{model_name}' is not available. "
-                "Update GROQ_MODEL in your .env to a valid model (e.g. 'llama-3.3-70b-versatile')."
-            )
+            raise TopicGenerationError(f"The configured Groq model '{model_name}' is not available.")
         raise TopicGenerationError(f"AI topic generation failed: {e}")
 
-    # Merge generated ideas with original signal data (same order, same count)
     merged = []
     for i, signal in enumerate(signals):
         idea = ideas[i] if i < len(ideas) else {}
@@ -176,3 +165,40 @@ def generate_topic_ideas(niche, signals, api_key, model_name=None):
         })
 
     return merged
+
+
+def generate_video_script(title, angle, api_key, model_name=None):
+    """Generates a full video script and B-roll ideas for a given title/angle."""
+    if not api_key:
+        raise TopicGenerationError("Missing Groq API key for script generation.")
+    
+    if model_name is None:
+        model_name = os.getenv("GROQ_MODEL", DEFAULT_MODEL)
+
+    try:
+        client = Groq(api_key=api_key)
+        prompt = SCRIPT_PROMPT_TEMPLATE.format(title=title, angle=angle)
+
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": "You are a JSON API. You respond ONLY with valid JSON objects."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+
+        raw_text = _extract_json(response.choices[0].message.content)
+        parsed = json.loads(raw_text)
+        
+        return {
+            "hook": parsed.get("hook", ""),
+            "intro": parsed.get("intro", ""),
+            "body": parsed.get("body", []),
+            "outro": parsed.get("outro", ""),
+            "b_roll": parsed.get("b_roll", [])
+        }
+
+    except Exception as e:
+        raise TopicGenerationError(f"Failed to generate script: {e}")

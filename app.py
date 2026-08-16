@@ -9,12 +9,12 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 
 from report import build_report_context, TopicGenerationError
 from fetch_trends import TrendFetchError
+from generate_topics import generate_topic_ideas, generate_video_script, TopicGenerationError
 from cache import get_cache, cache_status
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Single shared cache client (safe: redis-py is thread-safe)
 _cache = get_cache()
 
 
@@ -68,12 +68,35 @@ def generate():
         return render_template("landing.html", error=msg, niche=niche)
 
 
+@app.route("/generate_script", methods=["POST"])
+def generate_script_route():
+    """AJAX endpoint to generate a full video script on demand."""
+    if not request.is_json:
+        return jsonify({"success": False, "error": "Invalid request format."}), 400
+
+    data = request.get_json()
+    title = data.get("title", "").strip()
+    angle = data.get("angle", "").strip()
+
+    if not title or not angle:
+        return jsonify({"success": False, "error": "Missing title or angle."}), 400
+
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if not groq_api_key:
+        return jsonify({"success": False, "error": "Server missing Groq API key."}), 500
+
+    try:
+        script_data = generate_video_script(title, angle, groq_api_key)
+        return jsonify({"success": True, "script": script_data}), 200
+    except TopicGenerationError as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    except Exception as e:
+        logging.exception("Unexpected error in /generate_script")
+        return jsonify({"success": False, "error": "Failed to generate script."}), 500
+
+
 @app.route("/health", methods=["GET"])
 def health():
-    """
-    Health check — useful for Zerops uptime monitoring and judging verification.
-    Returns cache connectivity status so it's easy to confirm Valkey is wired up.
-    """
     cs = cache_status(_cache)
     return jsonify({
         "status": "ok",
