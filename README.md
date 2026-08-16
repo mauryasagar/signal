@@ -4,7 +4,7 @@
 
 **Stop guessing what to film next.** Signal automates your entire YouTube pre-production pipeline: it finds trending search demand, generates ready-to-film video titles, and with one click, writes the full video script and B-roll shot list.
 
-Built for the **Social Media Automation Hacks** on Devpost
+Built as an open-source content automation pipeline.
 
 [🚀 Live Demo](https://signal-2dc6-8000.prg1.zerops.app) &nbsp;•&nbsp; [📝 Blog](https://dev.to/sagarmaurya/how-i-built-a-youtube-trend-engine-on-zerops-hka)
 
