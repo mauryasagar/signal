@@ -292,6 +292,80 @@ function toggleFaq(btn) {
   }
 }
 
+// =========================================================
+// DYNAMIC SCRIPT GENERATOR (Event Delegation for AJAX HTML)
+// =========================================================
+function initScriptGeneration() {
+  document.addEventListener('click', async function (e) {
+    const button = e.target.closest('.btn-script-gen');
+    if (!button) return;
+
+    e.preventDefault();
+
+    const title = button.dataset.title;
+    const angle = button.dataset.angle;
+    const targetId = button.dataset.target;
+    const outputDiv = document.getElementById(targetId);
+
+    if (!outputDiv) return;
+
+    // Update UI to loading state
+    button.innerText = '🤖 Writing script...';
+    button.disabled = true;
+    button.style.opacity = '0.7';
+    outputDiv.style.display = 'block';
+    outputDiv.innerHTML = '<p style="color: #aaa;">Generating script, please wait...</p>';
+
+    try {
+      const response = await fetch('/generate_script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title, angle: angle })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const s = data.script;
+        outputDiv.innerHTML = `
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🎬 Hook (0-15s)</strong>
+            ${s.hook}
+          </div>
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">📺 Intro</strong>
+            ${s.intro}
+          </div>
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">📝 Main Content</strong>
+            <ul style="margin: 0; padding-left: 20px;">${s.body.map(item => `<li style="margin-bottom: 5px;">${item}</li>`).join('')}</ul>
+          </div>
+          <div style="margin-bottom: 15px;">
+            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🔚 Outro & CTA</strong>
+            ${s.outro}
+          </div>
+          <div>
+            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🎥 B-Roll Ideas</strong>
+            <ul style="margin: 0; padding-left: 20px;">${s.b_roll.map(item => `<li style="margin-bottom: 5px;">${item}</li>`).join('')}</ul>
+          </div>
+        `;
+        button.innerText = '✓ Script Generated';
+        button.style.opacity = '1';
+      } else {
+        outputDiv.innerHTML = `<p style="color: #ff4d4d;">Error: ${data.error}</p>`;
+        button.innerText = 'Try Again';
+        button.disabled = false;
+        button.style.opacity = '1';
+      }
+    } catch (error) {
+      outputDiv.innerHTML = `<p style="color: #ff4d4d;">Network error. Please try again.</p>`;
+      button.innerText = 'Try Again';
+      button.disabled = false;
+      button.style.opacity = '1';
+    }
+  });
+}
+
 function initReportInteractions() {
   // Only run on pages that have report-specific elements
   if (document.querySelector('[data-count]')) animateCounters();
@@ -304,9 +378,9 @@ document.addEventListener("DOMContentLoaded", function () {
   initAsyncFormSubmit();
   initSuggestionChips();
   initCopyButtons();
+  initScriptGeneration(); // Initialize the new script generator listener
   initReportInteractions();
 
   const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) toggleBtn.addEventListener("click", toggleTheme);
 });
-
