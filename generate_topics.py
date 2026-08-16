@@ -1,6 +1,6 @@
 """
 Turns raw trend/keyword signals into concrete, ready-to-film video topic
-suggestions using Groq (free tier, Qwen 3.6 27B).
+suggestions using Groq (free tier, Llama 3.3 70B Versatile).
 
 This is the step that makes the tool useful rather than just a keyword
 dump - "cold brew ratio" becomes "I Tested 5 Cold Brew Ratios So You
@@ -66,12 +66,15 @@ def _format_signals_for_prompt(signals):
 
 
 def _extract_json(text):
-    """Strip any <think>...</think> tags Qwen may prepend, then extract JSON object."""
+    """Strip thinking tags, markdown fences, and other wrapper text to extract a JSON object."""
     if not text:
         return ""
-    # Remove Qwen thinking blocks entirely
     import re
+    # Remove <think>...</think> blocks some models prepend
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE).strip()
+    text = re.sub(r"```\s*$", "", text, flags=re.MULTILINE).strip()
     # Find outermost { ... }
     start = text.find("{")
     end = text.rfind("}")
@@ -80,9 +83,9 @@ def _extract_json(text):
     return text.strip()
 
 
-def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b"):
+def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.3-70b-versatile"):
     """
-    Calls Groq (Qwen 3.6 27B) to turn raw signals into topic ideas.
+    Calls Groq (Llama 3.3 70B Versatile) to turn raw signals into topic ideas.
 
     Returns a list of dicts merging the original signal data with the
     generated title/angle.
@@ -132,6 +135,11 @@ def generate_topic_ideas(niche, signals, api_key, model_name="qwen/qwen3.6-27b")
         if "api key" in error_str or "authentication" in error_str or "401" in error_str:
             raise TopicGenerationError(
                 "Groq API key was rejected. Double-check GROQ_API_KEY in your .env file."
+            )
+        if "404" in error_str or "model_not_found" in error_str or "model not found" in error_str:
+            raise TopicGenerationError(
+                f"Model '{model_name}' is not available on Groq. "
+                f"Check https://console.groq.com/docs/models for current model IDs."
             )
         if "quota" in error_str or "429" in error_str or "rate" in error_str:
             raise TopicGenerationError(
