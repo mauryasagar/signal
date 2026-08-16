@@ -1,30 +1,29 @@
 <div align="center">
 
-# Signal — YouTube Trend-to-Topic Generator
+# Signal — YouTube Content Automation Pipeline
 
-**Stop guessing what to film next.** Signal finds what people are actually searching for in your niche, checks what's already getting views on YouTube, and hands you ready-to-film video ideas — ranked by demand.
+**Stop guessing what to film next.** Signal automates your entire YouTube pre-production pipeline: it finds trending search demand, generates ready-to-film video titles, and with one click, writes the full video script and B-roll shot list.
 
-Built for the **Zerops Challenge · WeMakeDevs 2026**
+Built for the **Social Media Automation Hacks** on Devpost
 
 [🚀 Live Demo](https://signal-2dc6-8000.prg1.zerops.app) &nbsp;•&nbsp; [📝 Blog](https://dev.to/sagarmaurya/how-i-built-a-youtube-trend-engine-on-zerops-hka)
 
 </div>
 
-
-
 ---
 
 ## The problem it solves
 
-Most YouTube content advice is generic — "post consistently," "use trending sounds," "add numbers to your title." None of it is specific to your niche or backed by real data.
+Most YouTube content advice is generic — "post consistently," "use trending sounds," "add numbers to your title." None of it is specific to your niche, and none of it actually writes the video for you.
 
-Signal instead:
+Signal automates the entire brainstorming and scripting workflow:
 - Looks at what people are **actually searching** in your specific niche right now
 - Cross-references it with what's **getting views on YouTube today**
 - Uses an LLM to turn raw keywords into **concrete, ready-to-film video titles**
+- **[NEW]** Automates scriptwriting: One click generates a full video script (Hook, Intro, Body, Outro) and a B-roll visual shot list.
 - Ranks everything by a **demand score** so you know where to start
 
-No login. No subscription. Paste a niche, get ideas in ~25 seconds.
+No login. No subscription. Paste a niche, get a complete video blueprint in ~30 seconds.
 
 ---
 
@@ -48,12 +47,14 @@ flowchart TB
     App -->|"2 · MISS only"| Trends["Google Trends<br/><i>pytrends</i>"]
     App -->|"2 · MISS only"| YT["YouTube Data API v3"]
     App -->|"4 · always"| Groq["Groq API<br/><i>Llama 3.3 70B</i>"]
+    App -->|"6 · on-demand script"| Groq
 
     Trends -.->|"related + rising<br/>queries"| App
     YT -.->|"video count +<br/>avg views"| App
     Groq -.->|"title + angle<br/>per topic"| App
+    Groq -.->|"hook, intro, body<br/>outro, b-roll"| App
 
-    App -->|"5 · ranked topics"| Report(["report.html"])
+    App -->|"5 · ranked topics<br/>6 · full scripts"| Report(["report.html"])
 
     style Zerops fill:#0d1321,stroke:#e8a33d,stroke-width:2px,color:#eef0f6
     style App fill:#141d31,stroke:#e8a33d,color:#eef0f6
@@ -121,7 +122,7 @@ Pulls **rising** and **top** related search queries for the niche over the last 
 ### Step 3 — YouTube Data API v3
 For each query from Trends, Signal calls `search.list` to find the top 5 most-viewed recent videos (published after August 2025). Then calls `videos.list` to get their view counts and compute an average. This gives a real-world signal of what's actively being made and watched. Each call costs 100 API units against the 10K/day free quota.
 
-### Step 4 — Groq LLM (Llama 3.3 70B)
+### Step 4 — Groq LLM (Llama 3.3 70B) Topic Ideation
 Sends all signals to Llama 3.3 70B via the Groq API with a structured prompt. The model receives each keyword + its demand indicators and returns a JSON array — one entry per signal — with a **video title** and a one-line **angle** explaining why it could work. Groq's free tier has no credit card requirement and handled this reliably in testing.
 
 ### Step 5 — Demand score + ranking
@@ -138,6 +139,9 @@ demand_score = (trend_interest × 0.60)
 - **15% avg views (log-scaled)** — how large the audience is; log scale prevents one viral outlier dominating
 
 Topics are sorted by demand score descending. The top topic gets a highlighted banner.
+
+### Step 6 — Automated Script Generation (On-Demand)
+When a creator clicks "Generate Full Script & B-Roll" on a topic card, an asynchronous AJAX request is sent to the backend. Llama 3.3 70B takes the title and angle and automatically drafts a complete, ready-to-film script. It returns a structured JSON object containing a 15-second Hook, Intro, main Body bullet points, an Outro with a Call-to-Action, and a list of visual B-roll ideas for the editor. This completely automates the scriptwriting phase of content creation.
 
 ---
 
@@ -159,10 +163,10 @@ Topics are sorted by demand score descending. The top topic gets a highlighted b
 
 ```
 signal/
-├── app.py                  # Flask routes: /, /about, /generate, /health
+├── app.py                  # Flask routes: /, /about, /generate, /generate_script, /health
 ├── report.py               # Pipeline orchestration + demand score
 ├── fetch_trends.py         # Google Trends + YouTube API calls
-├── generate_topics.py      # Groq LLM call + JSON parsing
+├── generate_topics.py      # Groq LLM calls (Topics + Scripts) + JSON parsing
 ├── cache.py                # Zerops Valkey integration (fails soft if not configured)
 ├── zerops.yaml             # Zerops build + run configuration
 ├── requirements.txt
@@ -172,11 +176,11 @@ signal/
 ├── templates/
 │   ├── base.html           # Shared nav, footer, radar loading animation
 │   ├── landing.html        # Home page + search form
-│   ├── report.html         # Ranked topic cards + stats strip
+│   ├── report.html         # Ranked topic cards + on-demand script generation UI
 │   └── about.html          # How it works page
 └── static/
     ├── style.css           # Dark/light theme via CSS vars + data-theme attribute
-    └── main.js             # Theme toggle (persisted in localStorage) + loading overlay
+    └── main.js             # Theme toggle, loading overlay, dynamic script generation
 ```
 
 ---
@@ -302,7 +306,7 @@ Hit `/health` on your live URL:
 ## AI tools used
 
 - **Claude (Anthropic)** — architecture decisions, code generation, README
-- **Groq / Llama 3.3 70B** — runtime LLM for topic generation (part of the product itself)
+- **Groq / Llama 3.3 70B** — runtime LLM for topic & script generation (part of the product itself)
 
 All code reviewed and understood by the author. Architecture and implementation decisions are original.
 
