@@ -70,7 +70,7 @@ def _extract_json(text):
     """Strip <think>...</think> tags and markdown code fences, then extract JSON object."""
     if not text:
         return ""
-    # Remove Qwen thinking blocks entirely (just in case)
+    # Remove <think>...</think> blocks some models prepend (just in case)
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
     # Strip markdown code fences if present (```json ... ``` or ``` ... ```)
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
