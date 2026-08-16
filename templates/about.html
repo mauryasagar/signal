@@ -4,28 +4,39 @@
 
 {% block content %}
 <section class="about-hero">
-  <p class="eyebrow">About</p>
-  <h1>Search interest, not guesswork.</h1>
-  <p class="lede">Most content advice is generic — "post consistently," "use trending sounds."</p>
-  <p class="lede">Signal looks at real, current search interest in your niche and cross-references it with what's actually getting views on YouTube right now.</p>
-  <p class="lede">It turns that into concrete video topics you can film today.</p>
+  <p class="eyebrow">Content Automation Pipeline</p>
+  <h1>From search trend to finished script.</h1>
+  <p class="lede">Most creators spend hours researching trends and staring at a blank page before writing a script.</p>
+  <p class="lede">Signal automates this entire workflow: it scans real-time search trends, ranks video topics by demand,
+    and with one click, writes your full video script and B-roll shot list.</p>
+  <p class="lede">It turns raw data into a ready-to-film blueprint in seconds.</p>
 </section>
 
 <section class="about-grid">
   <div class="about-card">
     <span class="about-step">01</span>
     <h3>Trend signals</h3>
-    <p>Google Trends surfaces related and rising search queries for your niche — a relative interest score, not raw volume, since that data isn't free anywhere.</p>
+    <p>Google Trends surfaces related and rising search queries for your niche — a relative interest score, not raw
+      volume, since that data isn't free anywhere.</p>
   </div>
   <div class="about-card">
     <span class="about-step">02</span>
     <h3>YouTube demand check</h3>
-    <p>The YouTube Data API checks how many recent videos exist for each related query and their average views — a real-world signal of what's actively being made and watched.</p>
+    <p>The YouTube Data API checks how many recent videos exist for each related query and their average views — a
+      real-world signal of what's actively being made and watched.</p>
   </div>
   <div class="about-card">
     <span class="about-step">03</span>
     <h3>Topic generation</h3>
-    <p>Groq, running Llama 3.3 70B, turns each raw keyword and its demand signal into an actual video title with a one-line angle on why it could work right now.</p>
+    <p>Groq, running Llama 3.3 70B, turns each raw keyword and its demand signal into an actual video title with a
+      one-line angle on why it could work right now.</p>
+  </div>
+  <div class="about-card">
+    <span class="about-step">04</span>
+    <h3>One-click script automation</h3>
+    <p>We don't just give you a title. Click "Generate Full Script" on any idea, and our AI instantly writes a complete
+      script. It includes a scroll-stopping hook, the main talking points, a call-to-action outro, and a list of B-roll
+      visuals for your editor.</p>
   </div>
 </section>
 
@@ -38,6 +49,6 @@
 </section>
 
 <section class="about-cta">
-  <a href="{{ url_for('landing') }}" class="btn-primary">Try a scan →</a>
+  <a href="{{ url_for('landing') }}" class="btn-primary">Automate a scan →</a>
 </section>
 {% endblock %}
