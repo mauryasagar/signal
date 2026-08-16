@@ -227,11 +227,16 @@ function initAsyncFormSubmit() {
       body: JSON.stringify({ niche: niche })
     })
       .then(async res => {
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          throw new Error("Server timed out or returned an error. Please try again.");
+        }
+
         let data;
         try {
           data = await res.json();
         } catch (e) {
-          throw new Error("Server returned an invalid HTML response instead of JSON. Please try again.");
+          throw new Error("Server returned an invalid response. Please try again.");
         }
 
         if (!res.ok) {
@@ -323,6 +328,12 @@ function initScriptGeneration() {
         body: JSON.stringify({ title: title, angle: angle })
       });
 
+      // Gracefully handle non-JSON server responses (like 502 gateways)
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("Server returned an error. Please try again.");
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -358,7 +369,7 @@ function initScriptGeneration() {
         button.style.opacity = '1';
       }
     } catch (error) {
-      outputDiv.innerHTML = `<p style="color: #ff4d4d;">Network error. Please try again.</p>`;
+      outputDiv.innerHTML = `<p style="color: #ff4d4d;">Error: ${error.message}</p>`;
       button.innerText = 'Try Again';
       button.disabled = false;
       button.style.opacity = '1';
