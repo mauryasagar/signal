@@ -119,8 +119,9 @@
           <!-- SCRIPT GENERATOR AREA START -->
           <div class="script-generator-area"
             style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <button type="button" class="btn-script-gen" data-title="{{ topic.title | tojson | safe }}"
-              data-angle="{{ topic.angle | tojson | safe }}" data-target="script-output-{{ loop.index }}"
+            <button type="button" class="btn-script-gen" onclick="generateScript(this)"
+              data-title="{{ topic.title | e }}" data-angle="{{ topic.angle | e }}"
+              data-target="script-output-{{ loop.index }}"
               style="background: transparent; border: 1px solid #e8a33d; color: #e8a33d; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;">
               Generate Full Script & B-Roll
             </button>
@@ -147,77 +148,6 @@
 
 <!-- Toast notification container -->
 <div id="toast-container" class="toast-container"></div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const scriptButtons = document.querySelectorAll('.btn-script-gen');
-
-    scriptButtons.forEach(button => {
-      button.addEventListener('click', async function () {
-        // Parse JSON safely back into strings
-        const title = JSON.parse(this.dataset.title);
-        const angle = JSON.parse(this.dataset.angle);
-        const targetId = this.dataset.target;
-        const outputDiv = document.getElementById(targetId);
-
-        // Update UI to loading state
-        this.innerText = '🤖 Writing script...';
-        this.disabled = true;
-        this.style.opacity = '0.7';
-        outputDiv.style.display = 'block';
-        outputDiv.innerHTML = '<p style="color: #aaa;">Generating script, please wait...</p>';
-
-        try {
-          const response = await fetch('/generate_script', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, angle })
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            const s = data.script;
-            outputDiv.innerHTML = `
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🎬 Hook (0-15s)</strong>
-                            ${s.hook}
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">📺 Intro</strong>
-                            ${s.intro}
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">📝 Main Content</strong>
-                            <ul style="margin: 0; padding-left: 20px;">${s.body.map(item => `<li style="margin-bottom: 5px;">${item}</li>`).join('')}</ul>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🔚 Outro & CTA</strong>
-                            ${s.outro}
-                        </div>
-                        <div>
-                            <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🎥 B-Roll Ideas</strong>
-                            <ul style="margin: 0; padding-left: 20px;">${s.b_roll.map(item => `<li style="margin-bottom: 5px;">${item}</li>`).join('')}</ul>
-                        </div>
-                    `;
-            this.innerText = '✓ Script Generated';
-            this.style.opacity = '1';
-          } else {
-            outputDiv.innerHTML = `<p style="color: #ff4d4d;">Error: ${data.error}</p>`;
-            this.innerText = 'Try Again';
-            this.disabled = false;
-            this.style.opacity = '1';
-          }
-        } catch (error) {
-          outputDiv.innerHTML = `<p style="color: #ff4d4d;">Network error. Please try again.</p>`;
-          this.innerText = 'Try Again';
-          this.disabled = false;
-          this.style.opacity = '1';
-        }
-      });
-    });
-  });
-</script>
 {% endblock %}
 
 {% block footer_link %}
@@ -227,3 +157,67 @@
 {% block footer_sep %}
 <span class="footer-sep">&middot;</span>
 {% endblock %}
+
+<!-- Add this script block at the very bottom of the file -->
+<script>
+  function generateScript(button) {
+    const title = button.dataset.title;
+    const angle = button.dataset.angle;
+    const targetId = button.dataset.target;
+    const outputDiv = document.getElementById(targetId);
+
+    // Update UI to loading state
+    button.innerText = '🤖 Writing script...';
+    button.disabled = true;
+    button.style.opacity = '0.7';
+    outputDiv.style.display = 'block';
+    outputDiv.innerHTML = '<p style="color: #aaa;">Generating script, please wait...</p>';
+
+    fetch('/generate_script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, angle: angle })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const s = data.script;
+          outputDiv.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🎬 Hook (0-15s)</strong>
+                    ${s.hook}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">📺 Intro</strong>
+                    ${s.intro}
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">📝 Main Content</strong>
+                    <ul style="margin: 0; padding-left: 20px;">${s.body.map(item => `<li style="margin-bottom: 5px;">${item}</li>`).join('')}</ul>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🔚 Outro & CTA</strong>
+                    ${s.outro}
+                </div>
+                <div>
+                    <strong style="color: #e8a33d; display: block; margin-bottom: 4px;">🎥 B-Roll Ideas</strong>
+                    <ul style="margin: 0; padding-left: 20px;">${s.b_roll.map(item => `<li style="margin-bottom: 5px;">${item}</li>`).join('')}</ul>
+                </div>
+            `;
+          button.innerText = '✓ Script Generated';
+          button.style.opacity = '1';
+        } else {
+          outputDiv.innerHTML = `<p style="color: #ff4d4d;">Error: ${data.error}</p>`;
+          button.innerText = 'Try Again';
+          button.disabled = false;
+          button.style.opacity = '1';
+        }
+      })
+      .catch(error => {
+        outputDiv.innerHTML = `<p style="color: #ff4d4d;">Network error. Please try again.</p>`;
+        button.innerText = 'Try Again';
+        button.disabled = false;
+        button.style.opacity = '1';
+      });
+  }
+</script>
