@@ -84,9 +84,12 @@ def _extract_json(text):
     """Strip tags and markdown code fences, then extract JSON object."""
     if not text:
         return ""
+    # Remove Qwen thinking blocks entirely (just in case)
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # Strip markdown code fences if present (```json ... ``` or ``` ... ```)
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE).strip()
+    # Find outermost { ... }
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
