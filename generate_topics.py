@@ -1,13 +1,11 @@
 """
 Turns raw trend/keyword signals into concrete, ready-to-film video topic
-suggestions using Groq (free tier, Llama 3.3 70B Versatile).
-
-This is the step that makes the tool useful rather than just a keyword
-dump - "cold brew ratio" becomes "I Tested 5 Cold Brew Ratios So You
-Don't Have To" with a one-line angle explaining why it'd work.
+suggestions using Groq.
 """
 
+import os
 import json
+import re
 import logging
 from groq import Groq
 
@@ -18,6 +16,9 @@ class TopicGenerationError(Exception):
     """Raised when the LLM call fails or returns something unusable."""
     pass
 
+
+# Default to Llama 3.3 70B - Groq's best free tier model
+DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
 PROMPT_TEMPLATE = """You are a YouTube content strategist helping a creator plan their next video.
 
@@ -56,9 +57,9 @@ def _format_signals_for_prompt(signals):
     lines = []
     for s in signals:
         demand_bits = []
-        if s["trend_interest"]:
+        if s.get("trend_interest"):
             demand_bits.append(f"trend interest {s['trend_interest']}/100")
-        if s["video_count"]:
+        if s.get("video_count"):
             demand_bits.append(f"{s['video_count']} recent videos, avg {s['avg_views']:,} views")
         demand_str = ", ".join(demand_bits) if demand_bits else "low signal"
         lines.append(f'- "{s["query"]}" ({demand_str})')
@@ -66,15 +67,14 @@ def _format_signals_for_prompt(signals):
 
 
 def _extract_json(text):
-    """Strip thinking tags, markdown fences, and other wrapper text to extract a JSON object."""
+    """Strip <think>...</think> tags and markdown code fences, then extract JSON object."""
     if not text:
         return ""
-    import re
-    # Remove <think>...</think> blocks some models prepend
+    # Remove Qwen thinking blocks entirely (just in case)
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Strip markdown code fences (```json ... ``` or ``` ... ```)
-    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE).strip()
-    text = re.sub(r"```\s*$", "", text, flags=re.MULTILINE).strip()
+    # Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+    text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE).strip()
     # Find outermost { ... }
     start = text.find("{")
     end = text.rfind("}")
@@ -83,9 +83,9 @@ def _extract_json(text):
     return text.strip()
 
 
-def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.3-70b-versatile"):
+def generate_topic_ideas(niche, signals, api_key, model_name=None):
     """
-    Calls Groq (Llama 3.3 70B Versatile) to turn raw signals into topic ideas.
+    Calls Groq to turn raw signals into topic ideas.
 
     Returns a list of dicts merging the original signal data with the
     generated title/angle.
@@ -99,6 +99,11 @@ def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.3-70b-vers
     if not signals:
         raise TopicGenerationError("No trend signals available to generate topics from.")
 
+    # Allow override via env var, fall back to safe default
+    if model_name is None:
+        model_name = os.getenv("GROQ_MODEL", DEFAULT_MODEL)
+
+    raw_text = ""
     try:
         client = Groq(api_key=api_key)
 
@@ -108,6 +113,7 @@ def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.3-70b-vers
             count=len(signals),
         )
 
+        # Force native JSON mode in Groq to prevent malformed responses
         response = client.chat.completions.create(
             model=model_name,
             messages=[
@@ -115,14 +121,19 @@ def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.3-70b-vers
                 {"role": "user", "content": prompt},
             ],
             temperature=0.6,
+            response_format={"type": "json_object"},  # <--- THIS ENFORCES STRICT JSON
         )
 
         raw_content = response.choices[0].message.content
         log.info("LLM raw response (first 500 chars): %s", raw_content[:500] if raw_content else "<empty>")
         raw_text = _extract_json(raw_content)
         log.info("Extracted JSON (first 500 chars): %s", raw_text[:500] if raw_text else "<empty>")
+        
         parsed = json.loads(raw_text)
         ideas = parsed.get("topics", [])
+
+        if not ideas or not isinstance(ideas, list):
+            raise TopicGenerationError("AI returned no usable topics. Please try again.")
 
     except json.JSONDecodeError as e:
         log.error("JSON parse failed. Extracted text: %s", raw_text[:1000] if raw_text else "<empty>")
@@ -130,20 +141,23 @@ def generate_topic_ideas(niche, signals, api_key, model_name="llama-3.3-70b-vers
             "AI returned a malformed response. Please try again."
         ) from e
 
+    except TopicGenerationError:
+        raise
+
     except Exception as e:
         error_str = str(e).lower()
         if "api key" in error_str or "authentication" in error_str or "401" in error_str:
             raise TopicGenerationError(
                 "Groq API key was rejected. Double-check GROQ_API_KEY in your .env file."
             )
-        if "404" in error_str or "model_not_found" in error_str or "model not found" in error_str:
-            raise TopicGenerationError(
-                f"Model '{model_name}' is not available on Groq. "
-                f"Check https://console.groq.com/docs/models for current model IDs."
-            )
         if "quota" in error_str or "429" in error_str or "rate" in error_str:
             raise TopicGenerationError(
                 "Groq free tier rate limit hit. Wait a minute and try again."
+            )
+        if "model" in error_str and ("not found" in error_str or "does not exist" in error_str or "404" in error_str):
+            raise TopicGenerationError(
+                f"The configured Groq model '{model_name}' is not available. "
+                "Update GROQ_MODEL in your .env to a valid model (e.g. 'llama-3.3-70b-versatile')."
             )
         raise TopicGenerationError(f"AI topic generation failed: {e}")
 
